@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac App Store edition: sandboxed. No Apple Events. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Outgoing requests only, to ask the App Store for the latest version (Check for Updates). -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Read dropped files and write results in folders the user picked in the folder chooser. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- Files dropped from Safari, Photos or Mail, and copied images, are saved to Downloads. -->
+	<key>com.apple.security.files.downloads.read-write</key>
+	<true/>
+	<!-- Remember those folders across launches (security-scoped bookmarks). -->
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+</dict>
+</plist>

@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_ENV_HINTS: "1"
+  TRANSFLO_IWORK_TESTS: "0"
+
+jobs:
+  test:
+    # This is the native arm64 runner; Transflo and its bundled helpers target arm64.
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source and history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare temporary output
+        run: |
+          {
+            echo "CI_LOGS=$RUNNER_TEMP/transflo-ci-logs"
+            echo "CI_RESULTS=$RUNNER_TEMP/transflo-ci-results"
+            echo "CI_DERIVED_DATA=$RUNNER_TEMP/transflo-ci-derived-data"
+            echo "TRANSFLO_RELEASE_OUTPUT_DIR=$RUNNER_TEMP/transflo-ci-release"
+          } >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/transflo-ci-logs" "$RUNNER_TEMP/transflo-ci-results"
+
+      - name: Check runner toolchain
+        id: toolchain
+        run: |
+          mkdir -p "$CI_LOGS" "$CI_RESULTS"
+          # Use the image's supported default Xcode, not an unavailable /Applications glob.
+          xcode-select -p
+          xcodebuild -version | tee "$CI_LOGS/toolchain.log"
+          xcrun swift --version | tee -a "$CI_LOGS/toolchain.log"
+          [[ "$(uname -m)" == arm64 ]] || { echo "::error::An arm64 runner is required"; exit 1; }
+          major="$(xcodebuild -version | awk '/^Xcode / { split($2, parts, "."); print parts[1] }')"
+          [[ "$major" -ge 26 ]] || { echo "::error::Xcode 26 or newer is required"; exit 1; }
+          echo "version=$(xcodebuild -version | tr '\n' '-')" >> "$GITHUB_OUTPUT"
+
+      - name: Install build and validation tools
+        run: |
+          brew install xcodegen swiftlint gitleaks actionlint \
+            pkg-config meson ninja cmake nasm autoconf automake libtool
+
+      - name: Validate workflow and scripts
+        run: |
+          actionlint
+          python3 scripts/validate-ui-test-plans.py
+          for script in scripts/*.sh; do bash -n "$script"; done
+          plutil -lint TransfloForMac/Resources/Info.plist TransfloForMac/Resources/PrivacyInfo.xcprivacy \
+            TransfloForMac/Resources/Transflo.entitlements TransfloForMac/Resources/TransfloAppStore.entitlements \
+            TransfloForMac/Resources/HelperSandbox.entitlements
+
+      - name: Scan Git history for secrets
+        run: gitleaks git --redact --exit-code 1 . 2>&1 | tee "$CI_LOGS/gitleaks.log"
+
+      - name: Lint Swift
+        run: swiftlint lint --strict --no-cache 2>&1 | tee "$CI_LOGS/swiftlint.log"
+
+      - name: Restore pinned media helpers
+        id: media-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Vendor/ffmpeg/bin
+            Vendor/ffmpeg/BUILDINFO.txt
+          key: ffmpeg-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.version }}-${{ hashFiles('scripts/build-ffmpeg.sh', 'Vendor/ffmpeg/checksums.txt') }}
+
+      - name: Build pinned LGPL media helpers
+        if: steps.media-cache.outputs.cache-hit != 'true'
+        run: ./scripts/build-ffmpeg.sh 2>&1 | tee "$CI_LOGS/ffmpeg-build.log"
+
+      - name: Check media helpers
+        run: |
+          for tool in ffmpeg ffprobe; do
+            test -x "Vendor/ffmpeg/bin/$tool"
+            [[ "$(lipo -archs "Vendor/ffmpeg/bin/$tool")" == arm64 ]]
+            "Vendor/ffmpeg/bin/$tool" -version > "$CI_LOGS/$tool-version.log"
+          done
+
+      - name: Save verified media helpers
+        if: steps.media-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Vendor/ffmpeg/bin
+            Vendor/ffmpeg/BUILDINFO.txt
+          key: ${{ steps.media-cache.outputs.cache-primary-key }}
+
+      - name: Test Swift packages
+        run: |
+          # Serialize CPU-heavy encoder tests; iWork Automation needs an interactive local Mac.
+          for package in Packages/*/; do
+            name="$(basename "$package")"
+            swift test --package-path "$package" --no-parallel \
+              --scratch-path "$RUNNER_TEMP/transflo-package-$name" \
+              2>&1 | tee "$CI_LOGS/$name.log"
+          done
+
+      - name: Generate Xcode project
+        run: ./scripts/bootstrap.sh 2>&1 | tee "$CI_LOGS/bootstrap.log"
+
+      - name: Test app units
+        run: |
+          xcodebuild test -project Transflo.xcodeproj -scheme TransfloForMac \
+            -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath "$CI_DERIVED_DATA" \
+            -resultBundlePath "$CI_RESULTS/Units.xcresult" \
+            -parallel-testing-enabled NO \
+            -testPlan Fast -only-testing:TransfloTests -enableCodeCoverage YES \
+            2>&1 | tee "$CI_LOGS/app-units.log"
+
+      - name: Test fast native UI
+        run: |
+          # One worker owns the desktop. README captures stay in the explicit local capture flow.
+          xcodebuild test -project Transflo.xcodeproj -scheme TransfloForMac \
+            -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath "$CI_DERIVED_DATA" \
+            -resultBundlePath "$CI_RESULTS/UI.xcresult" \
+            -parallel-testing-enabled NO \
+            -testPlan Fast -only-testing:TransfloUITests -enableCodeCoverage NO \
+            2>&1 | tee "$CI_LOGS/app-ui.log"
+
+      - name: Test extended native UI
+        if: github.event_name != 'pull_request'
+        run: |
+          # Disjoint from Fast: main/manual runs cover the remaining editors and locale matrix.
+          xcodebuild test -project Transflo.xcodeproj -scheme TransfloForMac -testPlan Extended \
+            -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath "$CI_DERIVED_DATA" \
+            -resultBundlePath "$CI_RESULTS/Extended.xcresult" \
+            -parallel-testing-enabled NO -enableCodeCoverage NO \
+            2>&1 | tee "$CI_LOGS/app-ui-extended.log"
+
+      - name: Build App Store edition and verify privacy and sandbox metadata
+        run: |
+          # Validate the separate compilation path without distribution credentials or uploading.
+          xcodebuild build -project Transflo.xcodeproj -scheme 'TransfloForMac App Store' \
+            -configuration AppStore -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath "$CI_DERIVED_DATA-appstore" \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+            PROVISIONING_PROFILE_SPECIFIER= \
+            2>&1 | tee "$CI_LOGS/appstore-build.log"
+          app="$CI_DERIVED_DATA-appstore/Build/Products/AppStore/Transflo.app"
+          plutil -lint "$app/Contents/Resources/PrivacyInfo.xcprivacy"
+          codesign -d --entitlements - --xml "$app" > "$CI_LOGS/appstore-entitlements.plist"
+          test "$(plutil -extract 'com\.apple\.security\.app-sandbox' raw "$CI_LOGS/appstore-entitlements.plist")" = true
+          for tool in ffmpeg ffprobe; do
+            codesign -d --entitlements - --xml "$app/Contents/Helpers/$tool" > "$CI_LOGS/$tool-entitlements.plist"
+            test "$(plutil -extract 'com\.apple\.security\.app-sandbox' raw "$CI_LOGS/$tool-entitlements.plist")" = true
+            test "$(plutil -extract 'com\.apple\.security\.inherit' raw "$CI_LOGS/$tool-entitlements.plist")" = true
+          done
+
+      - name: Build Release and generate installer and cask
+        run: |
+          # Ad-hoc signing only: this job has no signing/notarization secrets and publishes nothing.
+          ./scripts/release.sh 2>&1 | tee "$CI_LOGS/release.log"
+          ruby -c "$TRANSFLO_RELEASE_OUTPUT_DIR/transflo.rb"
+
+      - name: Upload logs and test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Transflo-diagnostics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/transflo-ci-logs
+            ${{ runner.temp }}/transflo-ci-results
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload review build
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Transflo-arm64-review-build
+          path: ${{ runner.temp }}/transflo-ci-release
+          if-no-files-found: error
+          retention-days: 7

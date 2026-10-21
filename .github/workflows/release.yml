@@ -1,0 +1,221 @@
+name: Release
+
+# Pushing a vMAJOR.MINOR.PATCH tag (matching MARKETING_VERSION) ships every channel at once:
+#   media ──┬── github-release ── homebrew
+#           └── app-store
+# The GitHub release (DMG) and the App Store upload run in parallel; Homebrew follows the DMG,
+# because the cask needs its SHA-256. Run it by hand to ship one side only.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+    inputs:
+      channels:
+        description: Channels to ship
+        type: choice
+        default: all
+        options: [all, github-and-homebrew, app-store]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_ENV_HINTS: "1"
+
+jobs:
+  media:
+    name: Media helpers
+    runs-on: macos-26
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read and check the version
+        id: version
+        run: |
+          version="$(awk -F' = ' '$1 == "MARKETING_VERSION" { print $2 }' Configs/Base.xcconfig)"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match MARKETING_VERSION $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "toolchain=$(xcodebuild -version | tr '\n' '-')" >> "$GITHUB_OUTPUT"
+
+      - name: Restore pinned media helpers
+        id: media-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Vendor/ffmpeg/bin
+            Vendor/ffmpeg/BUILDINFO.txt
+          key: ffmpeg-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.toolchain }}-${{ hashFiles('scripts/build-ffmpeg.sh', 'Vendor/ffmpeg/checksums.txt') }}
+
+      - name: Build pinned LGPL media helpers
+        if: steps.media-cache.outputs.cache-hit != 'true'
+        run: |
+          brew install pkg-config meson ninja cmake nasm autoconf automake libtool
+          ./scripts/build-ffmpeg.sh
+
+      - name: Save media helpers to the cache
+        if: steps.media-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Vendor/ffmpeg/bin
+            Vendor/ffmpeg/BUILDINFO.txt
+          key: ${{ steps.media-cache.outputs.cache-primary-key }}
+
+      - name: Hand the helpers to the release jobs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: media-helpers
+          path: |
+            Vendor/ffmpeg/bin
+            Vendor/ffmpeg/BUILDINFO.txt
+          retention-days: 1
+
+  github-release:
+    name: GitHub release (DMG)
+    needs: media
+    if: ${{ (inputs.channels || 'all') != 'app-store' }}
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.media.outputs.version }}
+      TRANSFLO_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/../release
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Restore media helpers
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: media-helpers
+          path: Vendor/ffmpeg
+
+      - name: Build the DMG, cask and notes
+        run: |
+          chmod +x Vendor/ffmpeg/bin/*
+          brew install xcodegen swiftlint
+          ./scripts/release.sh
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out="$TRANSFLO_RELEASE_OUTPUT_DIR"
+          dmg="$out/Transflo-$VERSION-arm64.dmg"
+          # Review builds are ad-hoc signed. Never publish one over a notarized public release.
+          mount="$(mktemp -d "$RUNNER_TEMP/transflo-public-release.XXXXXX")"
+          trap 'hdiutil detach "$mount" -quiet || true; rmdir "$mount" || true' EXIT
+          hdiutil attach "$dmg" -readonly -nobrowse -mountpoint "$mount" -quiet
+          codesign --verify --deep --strict "$mount/Transflo.app"
+          xcrun stapler validate "$mount/Transflo.app"
+          spctl --assess --type execute "$mount/Transflo.app"
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "v$VERSION" "$dmg" --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "v$VERSION" "$dmg" --repo "$GITHUB_REPOSITORY" --verify-tag --latest \
+              --title "Transflo $VERSION" --notes-file "$out/release-notes-$VERSION.md"
+          fi
+
+      - name: Hand the cask to Homebrew
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cask
+          path: ${{ env.TRANSFLO_RELEASE_OUTPUT_DIR }}/transflo.rb
+          retention-days: 1
+
+  homebrew:
+    name: Homebrew cask
+    needs: [media, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the tap
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Ali-Fayed/homebrew-transflo
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Restore the cask
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cask
+          path: cask
+
+      - name: Publish the cask
+        env:
+          VERSION: ${{ needs.media.outputs.version }}
+        run: |
+          mkdir -p tap/Casks
+          cp cask/transflo.rb tap/Casks/transflo.rb
+          cd tap
+          git add Casks/transflo.rb
+          if git diff --cached --quiet; then echo "Cask already up to date"; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" \
+            commit -m "transflo $VERSION"
+          git push
+
+  app-store:
+    name: Mac App Store
+    needs: media
+    if: ${{ (inputs.channels || 'all') != 'github-and-homebrew' }}
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      TRANSFLO_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      TRANSFLO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      TRANSFLO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      TRANSFLO_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/../release
+      TRANSFLO_UPLOAD: "1"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Restore media helpers
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: media-helpers
+          path: Vendor/ffmpeg
+
+      - name: Write the App Store Connect key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          [[ -n "$ASC_KEY_P8" && -n "$TRANSFLO_TEAM_ID" ]] || { echo "::error::App Store secrets are missing"; exit 1; }
+          key="$RUNNER_TEMP/AuthKey_$TRANSFLO_ASC_KEY_ID.p8"
+          printf '%s' "$ASC_KEY_P8" > "$key"
+          chmod 600 "$key"
+          echo "TRANSFLO_ASC_KEY_PATH=$key" >> "$GITHUB_ENV"
+
+      - name: Archive, sign and upload
+        run: |
+          chmod +x Vendor/ffmpeg/bin/*
+          brew install xcodegen swiftlint
+          ./scripts/release-appstore.sh
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8

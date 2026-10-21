@@ -1,0 +1,33 @@
+// iPhone and iPad app: main-actor-by-default isolation (Approachable Concurrency), every orientation.
+PRODUCT_NAME = TransfloMobile
+// The Mac app's identifier, so both editions share one App Store record (universal purchase).
+PRODUCT_BUNDLE_IDENTIFIER = $(BASE_BUNDLE_IDENTIFIER)
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SDKROOT = iphoneos
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+TARGETED_DEVICE_FAMILY = 1,2
+// iPhone and iPad only: the Mac has its own app, and Vision Pro isn't a target.
+SUPPORTS_MACCATALYST = NO
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+SWIFT_APPROACHABLE_CONCURRENCY = YES
+ASSETCATALOG_COMPILER_APPICON_NAME = MobileIcon
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_KEY_CFBundleDisplayName = Transflo
+INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.productivity
+INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES
+INFOPLIST_FILE = TransfloMobile/Resources/Info.plist
+INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = Save the images you create to your photo library when you choose Save to Photos.
+INFOPLIST_KEY_UIFileSharingEnabled = YES
+INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES
+INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+// SwiftLint reads the whole repo, so the lint phase cannot run in the script sandbox.
+ENABLE_USER_SCRIPT_SANDBOXING = NO
+// Signed automatically with Ali Fayed's team, so device runs and App Store archives need no setup.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
+DEVELOPMENT_TEAM = H368HQSP2D

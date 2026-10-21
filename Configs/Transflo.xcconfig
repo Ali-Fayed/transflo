@@ -1,0 +1,12 @@
+// App target: main-actor-by-default isolation (Approachable Concurrency).
+PRODUCT_NAME = Transflo
+PRODUCT_BUNDLE_IDENTIFIER = $(BASE_BUNDLE_IDENTIFIER)
+SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+SWIFT_APPROACHABLE_CONCURRENCY = YES
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+INFOPLIST_FILE = TransfloForMac/Resources/Info.plist
+CODE_SIGN_ENTITLEMENTS = TransfloForMac/Resources/Transflo.entitlements
+GENERATE_INFOPLIST_FILE = NO
+// SwiftLint reads the whole repo, so the lint phase cannot run in the script sandbox.
+ENABLE_USER_SCRIPT_SANDBOXING = NO
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent

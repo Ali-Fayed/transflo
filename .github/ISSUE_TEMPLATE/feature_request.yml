@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest a format, tool, action or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you want to do
+      description: The task you're trying to get done, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How Transflo could help
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today

@@ -1,0 +1,7 @@
+// App target, Mac App Store edition: sandboxed, with features the sandbox forbids switched off
+// (see AppEdition). Same bundle identifier as the direct edition.
+#include "Transflo.xcconfig"
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) APP_STORE
+CODE_SIGN_ENTITLEMENTS = TransfloForMac/Resources/TransfloAppStore.entitlements
+HELPER_ENTITLEMENTS = $(SRCROOT)/TransfloForMac/Resources/HelperSandbox.entitlements

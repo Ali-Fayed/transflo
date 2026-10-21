@@ -1,0 +1,32 @@
+# Transflo @VERSION@
+
+## The first release, built for Apple screens
+- **Mac:** three wheels at your cursor. Drag a file, tap a key, drop it on Convert, Tools or Actions.
+- **iPhone, iPhone Duo and iPad:** one universal app with a share extension, shaped for touch and Apple Pencil. [Get it free on the App Store](https://apps.apple.com/us/app/transflo-file-converter/id6824513929); this download is for Mac.
+- Best, Balanced or Smaller compression that never makes a file larger.
+- Saved Recipes and Shortcuts actions. Mac also supports watch folders.
+- On-device text extraction and 2× upscaling. Image descriptions depend on device support; Smart Rename is a Mac feature.
+- English and Arabic, light and dark, and VoiceOver throughout.
+
+Free, open-source file conversion at your cursor. Drag a file, tap a key, drop it on the wheel.
+
+## Install
+- **Homebrew:** `brew install --cask ali-fayed/transflo/transflo`
+- **DMG:** download `Transflo-@VERSION@-arm64.dmg` below, open it and drag Transflo to Applications.
+- **iPhone and iPad:** [Transflo: File Converter on the App Store](https://apps.apple.com/us/app/transflo-file-converter/id6824513929).
+@FIRST_LAUNCH@
+## What's inside
+- **⇧ Convert:** 290 conversion paths across images, icons, audio, video, documents, PDF, slides, spreadsheets, subtitles and archives.
+- **⌘ Tools:** 31 tools, from compress, crop and annotate to trim, bleep, merge, page editing, metadata, batch rename, text extraction, upscaling and Smart Rename, plus your own Recipes.
+- **⌃ Actions:** AirDrop, Archive to ZIP, Copy, Move, Copy Path and Terminal.
+- **Keyboard:** ⌥⌘Return on a Finder selection, plus Open in Transflo in the right-click menu.
+- **Settings:** General (language, appearance, accent, keys, haptics, tick sound, preset compression and output naming), Wheel (size and what each wheel shows), Recipes (chained steps and watch folders), Compatibility (every conversion at a glance) and About (version and updates).
+- **Editors:** focused editors for crop, rotate, adjust, annotate, redact, add or remove a background, collage, compress, trim, speed, split, merge, PDF pages, metadata and rename, with live previews and playback for audio and video.
+- **Output defaults:** Best, Balanced or Smaller compression and output filename styles.
+- **Getting Started:** a five-page tour with the current grouped wheel and selection style, replayable from the menu bar.
+- **Updates:** a daily check that notifies you when a new version is out (switch it off in Settings › About), plus Check for Updates… in the menu. Update with the new DMG or `brew upgrade --cask transflo`.
+- **Everything else:** a History window with Undo, English and Arabic, light and dark, and VoiceOver support.
+
+Get the iPhone and iPad app free on the App Store: https://apps.apple.com/us/app/transflo-file-converter/id6824513929. The Mac app requires macOS 14 or later on Apple silicon. File processing runs on your Mac. AirDrop shares files on request. The update check asks GitHub for the latest version number once a day and when you choose Check for Updates; nothing about you or your files is sent.
+
+SHA-256 (`Transflo-@VERSION@-arm64.dmg`): `@SHA256@`

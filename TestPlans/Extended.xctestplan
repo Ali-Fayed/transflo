@@ -1,0 +1,52 @@
+{
+  "configurations": [
+    {
+      "id": "810C45FA-0988-4E0A-B7FB-C47685C02210",
+      "name": "Default",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "codeCoverage": false
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "selectedTests": [
+        "EditorInventoryUITests/testEveryEditorFitsInArabicDark()",
+        "EditorInventoryUITests/testEveryEditorFitsInEnglishLight()",
+        "EditorPreviewUITests/testAdjustEditorInArabicDark()",
+        "EditorPreviewUITests/testAnnotateEditorInEnglishLight()",
+        "EditorPreviewUITests/testBeautifyInArabicDark()",
+        "EditorPreviewUITests/testCollageEditorInEnglishLight()",
+        "EditorPreviewUITests/testCompressionPresets()",
+        "EditorPreviewUITests/testCropChipsInArabicDark()",
+        "EditorPreviewUITests/testMetadataEditorInArabicDark()",
+        "EditorPreviewUITests/testRedactEditorInArabicDark()",
+        "EditorPreviewUITests/testRenameEditorInEnglishLight()",
+        "EditorPreviewUITests/testReorganizeEditorInEnglishDark()",
+        "EditorPreviewUITests/testResizeEditorInEnglishDark()",
+        "EditorPreviewUITests/testRotateAndMirrorControlsInBothLanguages()",
+        "JobResultDiscUITests/testDiscHidesAfterSuccess()",
+        "JobsWindowUITests/testJobsListInArabicDark()",
+        "MenuBarUITests/testSingleSettingsEntryAndAboutNavigation()",
+        "SettingsWindowUITests/testEachTabFitsItsContentInEnglishAndArabic()",
+        "ShelfUITests/testShelfInEnglishLight()",
+        "UpdateWindowUITests/testFailureCanBeRetriedInArabic()",
+        "UpdateWindowUITests/testUpToDateAndUnpublishedOfferAnotherCheck()",
+        "WelcomeWindowUITests/testArabicWelcomeCanBeDismissedWithoutQuitting()",
+        "WelcomeWindowUITests/testLegacyCompletionFlagStillShowsTour()",
+        "WheelPreviewUITests/testGroupedToolsInArabic()",
+        "WheelPreviewUITests/testMultiFileBadgeAndSummaryOnEveryWheel()",
+        "WheelPreviewUITests/testSavedRecipeAppearsOnToolsWheelAfterRelaunch()",
+        "WheelPreviewUITests/testToolsWheelInEnglishDark()"
+      ],
+      "target": {
+        "containerPath": "container:Transflo.xcodeproj",
+        "identifier": "7948EAD4EFF3CCA5334B5936",
+        "name": "TransfloUITests"
+      }
+    }
+  ],
+  "version": 1
+}

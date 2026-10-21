@@ -1,0 +1,50 @@
+included:
+  - TransfloForMac
+  - TransfloTests
+  - TransfloUITests
+  - TransfloMobile
+  - TransfloMobileTests
+  - TransfloMobileUITests
+  - TransfloShare
+  - Packages
+  - scripts
+excluded:
+  - Packages/*/.build
+  - DerivedData
+  - build
+
+opt_in_rules:
+  - closure_spacing
+  - contains_over_first_not_nil
+  - empty_count
+  - explicit_init
+  - fatal_error_message
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - modifier_order
+  - multiline_parameters
+  - private_over_fileprivate
+  - redundant_nil_coalescing
+  - sorted_imports
+  - toggle_bool
+  - vertical_whitespace_closing_braces
+
+analyzer_rules:
+  - unused_import
+
+disabled_rules:
+  - todo
+
+line_length:
+  warning: 120
+  error: 160
+  ignores_urls: true
+file_length:
+  warning: 300
+  error: 400
+type_body_length:
+  warning: 250
+  error: 350
+identifier_name:
+  excluded: [id, x, y, i, at, to]

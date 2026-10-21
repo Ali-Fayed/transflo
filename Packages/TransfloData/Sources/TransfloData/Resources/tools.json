@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "tools": [
+    {
+      "kind": "compress",
+      "interactive": true,
+      "families": [
+        "image",
+        "video",
+        "audio"
+      ],
+      "formats": [
+        "pdf"
+      ]
+    },
+    {
+      "kind": "resize",
+      "families": [
+        "image",
+        "video"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "crop",
+      "families": [
+        "image",
+        "video"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "rotate",
+      "interactive": true,
+      "families": [
+        "image",
+        "video"
+      ],
+      "formats": [
+        "pdf"
+      ]
+    },
+    {
+      "kind": "adjust",
+      "families": [
+        "image"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "annotate",
+      "families": [
+        "image"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "redact",
+      "families": [
+        "image"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "removeBackground",
+      "families": [
+        "image"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "addBackground",
+      "families": [
+        "image"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "readCode",
+      "families": [
+        "image"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "imagesToPDF",
+      "families": [
+        "image"
+      ],
+      "formats": [],
+      "multiple": true,
+      "interactive": true
+    },
+    {
+      "kind": "collage",
+      "families": [
+        "image"
+      ],
+      "formats": [],
+      "multiple": true,
+      "interactive": true
+    },
+    {
+      "kind": "trim",
+      "families": [
+        "video",
+        "audio"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "changeSpeed",
+      "families": [
+        "video",
+        "audio"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "split",
+      "families": [
+        "video",
+        "audio"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "merge",
+      "families": [
+        "video",
+        "audio"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "multiple": true,
+      "interactive": true
+    },
+    {
+      "kind": "snapshot",
+      "families": [
+        "video"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "mute",
+      "families": [
+        "video"
+      ],
+      "formats": []
+    },
+    {
+      "kind": "normalize",
+      "families": [
+        "audio",
+        "video"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "bleep",
+      "families": [
+        "audio",
+        "video"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "channels",
+      "families": [
+        "audio"
+      ],
+      "formats": [],
+      "interactive": true
+    },
+    {
+      "kind": "reorganizePages",
+      "families": [],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "extractPages",
+      "families": [],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "editMetadata",
+      "families": [
+        "image",
+        "video",
+        "audio"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "removeMetadata",
+      "families": [
+        "image",
+        "video",
+        "audio"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "interactive": true
+    },
+    {
+      "kind": "rename",
+      "families": [],
+      "formats": [],
+      "anyFile": true,
+      "interactive": true
+    },
+    {
+      "kind": "extractText",
+      "interactive": false,
+      "families": [
+        "image"
+      ],
+      "formats": [
+        "pdf"
+      ]
+    },
+    {
+      "kind": "describeImage",
+      "interactive": false,
+      "families": [
+        "image"
+      ],
+      "formats": []
+    },
+    {
+      "kind": "smartRename",
+      "interactive": true,
+      "families": [
+        "image"
+      ],
+      "formats": [
+        "pdf"
+      ]
+    },
+    {
+      "kind": "upscale",
+      "interactive": false,
+      "families": [
+        "image"
+      ],
+      "formats": []
+    },
+    {
+      "kind": "extractArchive",
+      "families": [
+        "archive"
+      ],
+      "formats": []
+    }
+  ]
+}

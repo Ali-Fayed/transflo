@@ -1,0 +1,2 @@
+TRANSFLO 2026
+A deterministic text fixture.

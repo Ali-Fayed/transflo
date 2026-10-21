@@ -1,0 +1,57 @@
+{
+  "configurations": [
+    {
+      "id": "BDE7737F-F550-4A22-B134-4D0487C04885",
+      "name": "Default",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "codeCoverage": false
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:Transflo.xcodeproj",
+        "identifier": "E45E792466265A385D518361",
+        "name": "TransfloTests"
+      }
+    },
+    {
+      "parallelizable": false,
+      "selectedTests": [
+        "EditorPreviewUITests/testBeautifyControlsAndLivePreview()",
+        "EditorPreviewUITests/testCropPortraitChipsPixelFieldsAndReset()",
+        "EditorPreviewUITests/testExtractEditorInArabicLight()",
+        "JobResultDiscUITests/testFailedConversionInArabicDark()",
+        "JobResultDiscUITests/testSuccessfulConversionInEnglishLight()",
+        "JobsWindowUITests/testJobsListShowsResultsInEnglishLight()",
+        "KeyboardWheelUITests/testArrowsAndReturnConvertTheSelection()",
+        "KeyboardWheelUITests/testEscapeClosesInArabic()",
+        "SettingsWindowUITests/testAutomaticUpdateChecksCanBeTurnedOffAndStayOff()",
+        "SettingsWindowUITests/testCustomizationSurvivesQuitAndRelaunch()",
+        "SettingsWindowUITests/testOutputNamingAndAdaptiveHeight()",
+        "SettingsWindowUITests/testSettingsOpensWithEveryGeneralControlInEnglishLight()",
+        "SettingsWindowUITests/testSwitchingPagesAndLanguageDoesNotLeaveInactiveSegments()",
+        "ShelfUITests/testShelfInArabicDarkCollapses()",
+        "UpdateWindowUITests/testAvailableUpdateOffersTheDownload()",
+        "WelcomeWindowUITests/testCompletedOrdinaryLaunchStaysInMenuBar()",
+        "WelcomeWindowUITests/testEveryPageBackDoneAndReplay()",
+        "WelcomeWindowUITests/testFirstLaunchOpensTourInFront()",
+        "WelcomeWindowUITests/testWelcomeExplainsMenuBarAndOpensSettings()",
+        "WheelPreviewUITests/testActionsWheelInArabicDark()",
+        "WheelPreviewUITests/testActionsWheelInEnglishLight()",
+        "WheelPreviewUITests/testConvertWheelInEnglishLight()",
+        "WheelSettingsUITests/testHideAllWarnsInArabicDark()",
+        "WheelSettingsUITests/testUntickingAToolUpdatesTheCountInEnglishLight()"
+      ],
+      "target": {
+        "containerPath": "container:Transflo.xcodeproj",
+        "identifier": "7948EAD4EFF3CCA5334B5936",
+        "name": "TransfloUITests"
+      }
+    }
+  ],
+  "version": 1
+}

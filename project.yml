@@ -1,0 +1,276 @@
+name: Transflo
+options:
+  bundleIdPrefix: com.transflo
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  groupSortPosition: top
+  postGenCommand: python3 scripts/sync-project-folders.py
+configs:
+  Debug: debug
+  Release: release
+  AppStore: release
+configFiles:
+  Debug: Configs/Debug.xcconfig
+  Release: Configs/Release.xcconfig
+  AppStore: Configs/AppStore.xcconfig
+packages:
+  TransfloDomain:
+    path: Packages/TransfloDomain
+  TransfloData:
+    path: Packages/TransfloData
+  TransfloSystem:
+    path: Packages/TransfloSystem
+targetTemplates:
+  # Sources and packages the iPhone/iPad app and its Share extension both compile: the Mac app's
+  # localization, design system, appearance, wheel and jobs layers.
+  MobileShared:
+    sources:
+      - path: TransfloForMac/Localization
+      - path: TransfloForMac/DesignSystem
+        excludes:
+          # Mac-only: records global keyboard shortcuts with AppKit's event monitor.
+          - Components/AppShortcutRecorder.swift
+      - path: TransfloForMac/Presentation/Appearance
+        excludes:
+          - NSAppAppearanceApplier.swift
+      - path: TransfloForMac/Presentation/Settings/CustomizationViewModel.swift
+      - path: TransfloForMac/Presentation/Settings/ToolPreferencesViewModel.swift
+      - path: TransfloForMac/Presentation/Settings/CompressionChoice.swift
+      - path: TransfloForMac/Presentation/Settings/WheelVisibilityViewModel.swift
+      - path: TransfloForMac/Presentation/Settings/WheelChoicePresentation.swift
+      - path: TransfloForMac/Presentation/Settings/Recipes/RecipesViewModel.swift
+      - path: TransfloForMac/Presentation/Settings/Recipes/RecipeStepRow.swift
+      - path: TransfloForMac/Presentation/Wheel
+        excludes:
+          # Mac-only: the drag-tracking panel, its drop view and trackpad haptics.
+          - WheelDropView.swift
+          - WheelHaptics.swift
+          - WheelPanelPresenter.swift
+      - path: TransfloForMac/Presentation/Jobs
+        excludes:
+          # Mac-only: floating HUD panels and the App Store edition's folder-access prompt.
+          - HintHUDPresenter.swift
+          - JobResultDiscPresenter.swift
+          - FolderAccessJobScheduler.swift
+          - JobsView.swift
+      - path: TransfloForMac/Presentation/Editors/ToolEditing.swift
+      - path: TransfloForMac/Presentation/Editors/TimeLabel.swift
+      # The markup editors run unchanged on iPhone and iPad.
+      - path: TransfloForMac/Presentation/Editors/ToolEditorModel.swift
+      - path: TransfloForMac/Presentation/Editors/AnnotateEditorView.swift
+      - path: TransfloForMac/Presentation/Editors/AnnotateEditorViewModel.swift
+      - path: TransfloForMac/Presentation/Editors/RedactEditorView.swift
+      - path: TransfloForMac/Presentation/Editors/RedactEditorViewModel.swift
+      - path: TransfloForMac/Presentation/Editors/MarkupFooter.swift
+      - path: TransfloForMac/Presentation/Editors/MarkupTool.swift
+      - path: TransfloForMac/Presentation/Editors/MarkupWeight.swift
+      - path: TransfloForMac/Presentation/Editors/PagedMarkHistory.swift
+      - path: TransfloForMac/Presentation/Editors/PDFMarkupNavigation.swift
+      - path: TransfloForMac/Presentation/Editors/PreviewAspect.swift
+      - path: TransfloForMac/Presentation/Actions/ActionPreparing.swift
+      - path: TransfloForMac/Resources/Localizable.xcstrings
+      - path: TransfloForMac/Resources/Assets.xcassets
+    dependencies:
+      - package: TransfloDomain
+        product: TransfloDomain
+      - package: TransfloData
+targets:
+  # The Mac app. The target is TransfloForMac; the app itself is still named Transflo (PRODUCT_NAME).
+  TransfloForMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: TransfloForMac
+        excludes:
+          - Resources/Info.plist
+          - Resources/Transflo.entitlements
+          - Resources/TransfloAppStore.entitlements
+          - Resources/HelperSandbox.entitlements
+    configFiles:
+      Debug: Configs/Transflo.xcconfig
+      Release: Configs/Transflo.xcconfig
+      AppStore: Configs/TransfloAppStore.xcconfig
+    dependencies:
+      - package: TransfloDomain
+        product: TransfloDomain
+      - package: TransfloData
+      - package: TransfloSystem
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          if command -v swiftlint >/dev/null; then
+            swiftlint lint --strict --quiet --config "$SRCROOT/.swiftlint.yml" "$SRCROOT"
+          else
+            echo "warning: SwiftLint is not installed (brew install swiftlint)"
+          fi
+    postBuildScripts:
+      - name: Unsign resource bundles
+        basedOnDependencyAnalysis: false
+        script: |
+          # Swift package resource bundles hold only data (catalog.json, tools.json). Xcode signs them
+          # with the build identity, and App Store export doesn't re-sign bundles in Resources, so the
+          # store rejects them (ITMS-90284). Without their own signature, the app's signature seals them.
+          for BUNDLE in "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"/*.bundle; do
+            [ -d "$BUNDLE/Contents/_CodeSignature" ] || continue
+            if find "$BUNDLE" -type f -perm -u+x | grep -q .; then
+              echo "error: $(basename "$BUNDLE") contains executable code; it can't be shipped unsigned"
+              exit 1
+            fi
+            rm -rf "$BUNDLE/Contents/_CodeSignature"
+          done
+      - name: Bundle ffmpeg and ffprobe
+        basedOnDependencyAnalysis: false
+        script: |
+          HELPERS="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers"
+          for TOOL in ffmpeg ffprobe; do
+            SOURCE="$SRCROOT/Vendor/ffmpeg/bin/$TOOL"
+            if [ -x "$SOURCE" ]; then
+              mkdir -p "$HELPERS"
+              cp -f "$SOURCE" "$HELPERS/$TOOL"
+              # The App Store edition's helpers inherit the app's sandbox.
+              codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" --options runtime --timestamp=none \
+                ${HELPER_ENTITLEMENTS:+--entitlements "$HELPER_ENTITLEMENTS"} "$HELPERS/$TOOL"
+            else
+              echo "warning: Vendor/ffmpeg/bin/$TOOL not built (scripts/build-ffmpeg.sh); formats and tools needing it are hidden"
+            fi
+          done
+  TransfloTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [TransfloTests]
+    settings:
+      # The host app keeps its product name, Transflo, though its target is TransfloForMac.
+      TEST_HOST: $(BUILT_PRODUCTS_DIR)/Transflo.app/Contents/MacOS/Transflo
+      BUNDLE_LOADER: $(TEST_HOST)
+    configFiles:
+      Debug: Configs/TransfloTests.xcconfig
+      Release: Configs/TransfloTests.xcconfig
+      AppStore: Configs/TransfloTests.xcconfig
+    dependencies:
+      - target: TransfloForMac
+      - package: TransfloDomain
+        product: TransfloDomainTestSupport
+  TransfloUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - TransfloUITests
+      - TransfloForMac/App/LaunchArgument.swift
+      - TransfloForMac/Presentation/Navigation/WindowIdentifier.swift
+    configFiles:
+      Debug: Configs/TransfloUITests.xcconfig
+      Release: Configs/TransfloUITests.xcconfig
+      AppStore: Configs/TransfloUITests.xcconfig
+    dependencies:
+      - target: TransfloForMac
+  # iPhone and iPad. Shares the Mac app's localization, design system and appearance layer;
+  # TransfloMobile holds the iOS shell (app, navigation, composition root and iOS-only screens).
+  TransfloMobile:
+    type: application
+    platform: iOS
+    templates: [MobileShared]
+    sources:
+      - path: TransfloMobile
+      # Shortcuts and Siri actions, shared with the Mac (the Share extension can't host them).
+      - path: TransfloForMac/Intents
+        excludes:
+          - Resources/Info.plist
+    configFiles:
+      Debug: Configs/TransfloMobile.xcconfig
+      Release: Configs/TransfloMobile.xcconfig
+      AppStore: Configs/TransfloMobile.xcconfig
+    dependencies:
+      - target: TransfloShare
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          if command -v swiftlint >/dev/null; then
+            swiftlint lint --strict --quiet --config "$SRCROOT/.swiftlint.yml" "$SRCROOT"
+          else
+            echo "warning: SwiftLint is not installed (brew install swiftlint)"
+          fi
+  # "Convert with Transflo" in every share sheet: the same wheel, editors and save flow, run inside
+  # the extension (iOS lets a share extension save results, but not open its app).
+  TransfloShare:
+    type: app-extension
+    platform: iOS
+    templates: [MobileShared]
+    sources:
+      - path: TransfloShare
+        excludes:
+          - Info.plist
+      - path: TransfloMobile
+        excludes:
+          - App/**
+          - Resources/Info.plist
+    configFiles:
+      Debug: Configs/TransfloShare.xcconfig
+      Release: Configs/TransfloShare.xcconfig
+      AppStore: Configs/TransfloShare.xcconfig
+  TransfloMobileTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TransfloMobileTests]
+    configFiles:
+      Debug: Configs/TransfloMobileTests.xcconfig
+      Release: Configs/TransfloMobileTests.xcconfig
+      AppStore: Configs/TransfloMobileTests.xcconfig
+    dependencies:
+      - target: TransfloMobile
+      - package: TransfloDomain
+        product: TransfloDomainTestSupport
+  TransfloMobileUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [TransfloMobileUITests]
+    configFiles:
+      Debug: Configs/TransfloMobileUITests.xcconfig
+      Release: Configs/TransfloMobileUITests.xcconfig
+      AppStore: Configs/TransfloMobileUITests.xcconfig
+    dependencies:
+      - target: TransfloMobile
+schemes:
+  TransfloForMac:
+    build:
+      targets:
+        TransfloForMac: all
+    test:
+      gatherCoverageData: false
+      testPlans:
+        - path: TestPlans/Fast.xctestplan
+          defaultPlan: true
+        - path: TestPlans/Extended.xctestplan
+    run:
+      config: Debug
+    archive:
+      config: Release
+  TransfloForMac App Store:
+    build:
+      targets:
+        TransfloForMac: all
+    run:
+      config: AppStore
+    profile:
+      config: AppStore
+    archive:
+      config: AppStore
+  TransfloMobile:
+    build:
+      targets:
+        TransfloMobile: all
+    test:
+      gatherCoverageData: false
+      targets:
+        - TransfloMobileTests
+        - TransfloMobileUITests
+    run:
+      config: Debug
+    archive:
+      config: Release

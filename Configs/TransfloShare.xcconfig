@@ -1,0 +1,25 @@
+// Share extension: "Transflo" in the system share sheet, embedded in the iPhone and iPad app.
+PRODUCT_NAME = TransfloShare
+PRODUCT_BUNDLE_IDENTIFIER = $(BASE_BUNDLE_IDENTIFIER).share
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SDKROOT = iphoneos
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+TARGETED_DEVICE_FAMILY = 1,2
+// iPhone and iPad only: the Mac has its own app, and Vision Pro isn't a target.
+SUPPORTS_MACCATALYST = NO
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+SWIFT_APPROACHABLE_CONCURRENCY = YES
+// Extensions may only call extension-safe APIs; the compiler checks it.
+APPLICATION_EXTENSION_API_ONLY = YES
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_FILE = TransfloShare/Info.plist
+INFOPLIST_KEY_CFBundleDisplayName = Transflo
+INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = Save the images you create to your photo library when you choose Save to Photos.
+SKIP_INSTALL = YES
+// Signed automatically with Ali Fayed's team, so device runs and App Store archives need no setup.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
+DEVELOPMENT_TEAM = H368HQSP2D

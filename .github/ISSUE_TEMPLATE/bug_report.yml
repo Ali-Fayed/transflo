@@ -1,0 +1,48 @@
+name: Bug report
+description: Something doesn't work as described.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Drag a PNG from Finder
+        2. Tap Shift and drop on WebP
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Transflo version
+      description: Menu bar icon › About Transflo.
+      placeholder: 1.0.0 (2)
+    validations:
+      required: true
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Where you installed it
+      options: [DMG from GitHub, Homebrew, Mac App Store, Built from source]
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: macOS 26.1
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: Redact file names, paths and personal content. Never attach private files.

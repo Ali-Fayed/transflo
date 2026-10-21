@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Developer ID with Xcode's cloud-managed certificate; "upload" submits the app for notarization. -->
+	<key>method</key>
+	<string>developer-id</string>
+	<key>destination</key>
+	<string>upload</string>
+	<key>teamID</key>
+	<string>@TEAM_ID@</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+</dict>
+</plist>

@@ -1,0 +1,2 @@
+// The Mac App Store build: Release settings, plus the sandboxed edition set per target.
+#include "Release.xcconfig"
